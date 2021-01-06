@@ -3,6 +3,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Graphics.OpenGL;
+using System;
 
 namespace CHIP_8
 {
@@ -10,9 +11,12 @@ namespace CHIP_8
     {
         static void Main(string[] args)
         {
+
+            Console.CursorVisible = false;
+            Console.SetWindowSize(64, 32);
             var gameSettings = new GameWindowSettings
             {
-                UpdateFrequency = 600
+                UpdateFrequency = 60
             };
 
             var nativeSettings = new NativeWindowSettings
@@ -21,23 +25,10 @@ namespace CHIP_8
                 Profile = ContextProfile.Compatability,
                 Title = "Chip8 Emulator"
             };
-
-            //var window = new GameWindow(gameSettings, nativeSettings);
-
-            //window.Run();
-            // This line creates a new instance, and wraps the instance in a using statement so it's automatically disposed once we've exited the block.
             using (Game game = new Game(gameSettings, nativeSettings))
             {
-                //Run takes a double, which is how many frames per second it should strive to reach.
-                //You can leave that out and it'll just update as fast as the hardware will allow it.
                 game.Run();
-                //game.Run(60.0);
-                
-            };
-
-
-
-            
+            }
         }
     }
 }

@@ -10,7 +10,6 @@ namespace CHIP_8
         static int cols = 64;
         static int rows = 32;
         private bool[] display = new bool[cols * rows];
-        private bool[] ddisplay = new bool[cols * rows * 2]; 
 
         public bool SetPixel(int x, int y)
         {
@@ -31,13 +30,12 @@ namespace CHIP_8
         public void Clear()
         {
             display = new bool[cols * rows];
-            ddisplay = new bool[Int16.MaxValue];
-    }
+        }
 
+        bool[,] lastDebug = new bool[64, 32];
         public void Render()
         {
             bool[,] debug = new bool[64,32];
-            string output = string.Empty;
 
 
             // Loop through our display array
@@ -61,26 +59,27 @@ namespace CHIP_8
             {
                 for (int j = 0; j <= 63; j++)
                 {
-                    if (debug[j, i] == true)
+                    if (debug[j, i] == true && debug[j, i] != lastDebug[j, i])
                     {
-                        WriteAt("#", j, i);
+                        WriteAt((char)35, j, i);
                     }
-                    else
+                    else if(debug[j, i] == false && debug[j, i] != lastDebug[j, i])
                     {
-                        WriteAt(" ", j, i);
+                        WriteAt((char)32, j, i);
                     }
                 }
             }
+
+            lastDebug = debug;
         }
         private static int cursorleft = Console.CursorLeft;
         private static int cursortop = Console.CursorTop;
 
-        protected static void WriteAt(string s, int x, int y)
+        protected static void WriteAt(char s, int x, int y)
         {
             try
             {
                 Console.SetCursorPosition(cursorleft + x, cursortop + y);
-                Console.CursorVisible = false;
                 Console.Write(s);
             }
             catch (ArgumentOutOfRangeException e)

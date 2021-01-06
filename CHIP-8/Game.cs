@@ -25,7 +25,7 @@ namespace CHIP_8
             cpu = new CPU(renderer, speaker, keyboard);
 
             cpu.loadSpritesIntoMemory();
-            cpu.loadRom(@"C:\Users\Sebastian\Downloads\octoachip8story.ch8");
+            cpu.loadRom(@"C:\Users\Sebastian\Downloads\danm8ku.ch8");
 
             Task.Run(() => CpuCycle());
             //while (true)
@@ -42,9 +42,9 @@ namespace CHIP_8
         }
 
 
-
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
+           
             base.OnUpdateFrame(args);
         }
         protected override void OnResize(ResizeEventArgs e)
@@ -67,8 +67,16 @@ namespace CHIP_8
             base.OnKeyDown(e);
         }
 
+
         protected override void OnLoad()
         {
+
+            GL.Enable(EnableCap.Texture2D);
+
+            //GL.Tex
+
+            GL.Disable(EnableCap.Texture2D);
+
             base.OnLoad();
         }
 
