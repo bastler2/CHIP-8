@@ -11,6 +11,12 @@ namespace CHIP_8
         static int rows = 32;
         private bool[] display = new bool[cols * rows];
 
+        public Renderer()
+        {
+            Console.SetWindowSize(cols, rows);
+            Console.CursorVisible = false;
+        }
+
         public bool SetPixel(int x, int y)
         {
             if (x > cols)
@@ -41,35 +47,19 @@ namespace CHIP_8
             // Loop through our display array
             for (int i = 0; i < cols * rows; i++)
             {
-                // Grabs the x position of the pixel based off of `i`
                 int x = (i % cols);
-                // Grabs the y position of the pixel based off of `i`
                 int y = i / cols;
 
                 // If the value at this.display[i] == 1, then draw a pixel.
                 if (display[i])
-                {
-                    // Place a pixel at position (x, y) with a width and height of scale
                     debug[x, y] = true;
-                }
+
+                if (debug[x, y] == true && debug[x, y] != lastDebug[x, y])
+                    WriteAt((char)35, x, y);
+                else if (debug[x, y] == false && debug[x, y] != lastDebug[x, y])
+                    WriteAt((char)32, x, y);
+
             }
-
-
-            for (int i = 0; i <= 31; i++)
-            {
-                for (int j = 0; j <= 63; j++)
-                {
-                    if (debug[j, i] == true && debug[j, i] != lastDebug[j, i])
-                    {
-                        WriteAt((char)35, j, i);
-                    }
-                    else if(debug[j, i] == false && debug[j, i] != lastDebug[j, i])
-                    {
-                        WriteAt((char)32, j, i);
-                    }
-                }
-            }
-
             lastDebug = debug;
         }
         private static int cursorleft = Console.CursorLeft;

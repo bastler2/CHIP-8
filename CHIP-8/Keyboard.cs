@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace CHIP_8
@@ -33,7 +34,6 @@ namespace CHIP_8
             keyMap.TryGetValue(key, out mappedKey);
             keysPressed[mappedKey] = false;
         }
-
 
         /// <summary>
         /// Keybindings
