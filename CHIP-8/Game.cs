@@ -18,12 +18,15 @@ namespace CHIP_8
             cpu = new CPU(renderer, speaker, keyboard);
 
             cpu.loadSpritesIntoMemory();
-            cpu.loadRom(@"C:\Users\Sebastian\Downloads\octoachip8story.ch8");
+            cpu.loadRom(@"C:\Users\Sebastian\Downloads\flightrunner.ch8");
 
             //Task.Run(() => CpuCycle());
             while (true)
             {
                 cpu.cycle();
+
+                //keyboard.CheckKeys();
+                //Task.Run(() => keyboard.CheckKeys());
             }
         }
         private Task CpuCycle()

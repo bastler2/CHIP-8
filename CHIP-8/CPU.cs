@@ -50,12 +50,14 @@ namespace CHIP_8
             paused = false;
 
             // Speed
-            speed = 10;
+            speed = 300; //number of instructions before rendering
         }
 
 
         public void executeInstruction(int opcode)
         {
+            
+
             programmCounter += 2;
 
             // We only need the 2nd nibble, so grab the value of the 2nd nibble
@@ -82,6 +84,7 @@ namespace CHIP_8
                     }
                     break;
                 case 0x1000: //1nnn - JP addr - Jump to location nnn. The interpreter sets the program counter to nnn.
+                    var z = (opcode & 0xFFF);
                     programmCounter = (opcode & 0xFFF);
                     break;
                 case 0x2000: //2nnn - CALL addr - Call subroutine at nnn. The interpreter increments the stack pointer, then puts the current PC on the top of the stack. The PC is then set to nnn.
@@ -138,6 +141,9 @@ namespace CHIP_8
                         case 0x6: //8xy6 - SHR Vx {, Vy} - Set Vx = Vx SHR 1. If the least - significant bit of Vx is 1, then VF is set to 1, otherwise 0.Then Vx is divided by 2.
                             v[0xF] = Convert.ToByte(v[x] & 0x01);
                             v[x] >>= 1;
+                            //ONLY TESTING ?!?!?!
+                            v[0xF] = Convert.ToByte(v[y] & 0x01);
+                            v[y] >>= 1;
                             break;
                         case 0x7: //8xy7 - SUBN Vx, Vy - Set Vx = Vy - Vx, set VF = NOT borrow. If Vy > Vx, then VF is set to 1, otherwise 0.Then Vx is subtracted from Vy, and the results stored in Vx.
                             v[0xF] = 0;
@@ -296,13 +302,19 @@ namespace CHIP_8
 
         public void cycle()
         {
+            
             for (int i = 0; i < speed; i++)
+            {
+
                 if (!paused)
                     executeInstruction(memory[programmCounter] << 8 | memory[programmCounter + 1]);
+            }
             if (!paused)
                 updateTimers();
             playSound();
-            renderer.Render();
+
+            //keyboard.CheckKeys();
+            renderer.Render(v, memory);
         }
 
         void updateTimers()
