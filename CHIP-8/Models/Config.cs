@@ -6,5 +6,10 @@ namespace CHIP_8.Models
 {
     class Config
     {
+        public int FpsRender { get; set; }
+        public int FpsTimer { get; set; }
+        public int ExecutionSpeed { get; set; }
+        public List<ConsoleKey> KeyBinding { get; set; }
+        public bool ShowDebugging { get; set; }
     }
 }

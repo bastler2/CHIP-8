@@ -6,8 +6,4 @@
     <RootNamespace>CHIP_8</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="OpenTK" Version="4.4.0" />
-  </ItemGroup>
-
 </Project>

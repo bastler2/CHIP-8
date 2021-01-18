@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -9,7 +10,6 @@ namespace CHIP_8
     {
 
         public Renderer renderer;
-        public Speaker speaker;
         public Keyboard keyboard;
         private byte[] memory;
         private byte delayTimer;
@@ -17,15 +17,23 @@ namespace CHIP_8
         private int programmCounter;
         private List<int> stack;
         private bool paused;
-        private int speed;
+        public int speed = 1;
         private byte[] v;
         private int i;
+        public double RenderFps = 16.66;
+        public double TimerFps = 16.66;
+        Stopwatch stopwatch60 = new Stopwatch();
+        Stopwatch stopwatchRender = new Stopwatch();
 
-        public CPU(Renderer renderer, Speaker speaker, Keyboard keyboard)
+        public CPU(Renderer renderer, Keyboard keyboard)
         {
             this.renderer = renderer;
-            this.speaker = speaker;
             this.keyboard = keyboard;
+
+            //60fps
+            stopwatch60.Start();
+            //renderspeed
+            stopwatchRender.Start();
 
             //4096 bytes (4KB) memory
             memory = new byte[4096];
@@ -49,8 +57,6 @@ namespace CHIP_8
             // Some instructions require pausing, like Fx0A.
             paused = false;
 
-            // Speed
-            speed = 300; //number of instructions before rendering
         }
 
 
@@ -84,7 +90,6 @@ namespace CHIP_8
                     }
                     break;
                 case 0x1000: //1nnn - JP addr - Jump to location nnn. The interpreter sets the program counter to nnn.
-                    var z = (opcode & 0xFFF);
                     programmCounter = (opcode & 0xFFF);
                     break;
                 case 0x2000: //2nnn - CALL addr - Call subroutine at nnn. The interpreter increments the stack pointer, then puts the current PC on the top of the stack. The PC is then set to nnn.
@@ -171,30 +176,19 @@ namespace CHIP_8
                     v[x] = Convert.ToByte(new Random().Next(0, 255) & (opcode & 0xFF));
                     break;
                 case 0xD000: //Dxyn - DRW Vx, Vy, nibble - Display n-byte sprite starting at memory location I at(Vx, Vy), set VF = collision. The interpreter reads n bytes from memory, starting at the address stored in I.These bytes are then displayed as sprites on screen at coordinates(Vx, Vy). Sprites are XORed onto the existing screen.If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0.If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen.See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip - 8 screen and sprites.
-
-
-
                     int width = 8;
                     int height = (opcode & 0xF);
-
                     v[0xF] = 0;
-
                     for (int row = 0; row < height; row++)
                     {
                         int sprite = memory[i + row];
-
                         for (int col = 0; col < width; col++)
                         {
                             // If the bit (sprite) is not 0, render/erase the pixel
                             if ((sprite & 0x80) > 0)
-                            {
                                 // If setPixel returns 1, which means a pixel was erased, set VF to 1
                                 if (renderer.SetPixel(v[x] + col, v[y] + row))
-                                {
                                     v[0xF] = 1;
-                                }
-                            }
-
                             // Shift the sprite left 1. This will move the next next col/bit of the sprite into the first position.
                             // Ex. 10010000 << 1 will become 0010000
                             sprite <<= 1;
@@ -205,11 +199,11 @@ namespace CHIP_8
                     switch (opcode & 0xFF)
                     {
                         case 0x9E: //Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2.
-                            if (keyboard.IsKeyPressed(v[x]))
+                            if (keyboard.IsKeyDown(v[x]))
                                 programmCounter += 2;
                             break;
                         case 0xA1: //ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed. Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2.
-                            if (!keyboard.IsKeyPressed(v[x]))
+                            if (!keyboard.IsKeyDown(v[x]))
                                 programmCounter += 2;
                             break;
                     }
@@ -299,22 +293,26 @@ namespace CHIP_8
             for (int loc = 0; loc < rom.Length; loc++)
                 memory[0x200 + loc] = rom[loc];
         }
-
+        
         public void cycle()
         {
-            
-            for (int i = 0; i < speed; i++)
+            while (true)
             {
+                //speed
+                for (int i = 0; i < speed; i++)
+                    if (!paused)
+                        executeInstruction(memory[programmCounter] << 8 | memory[programmCounter + 1]);
 
-                if (!paused)
-                    executeInstruction(memory[programmCounter] << 8 | memory[programmCounter + 1]);
+                //only render and update timer in 60fps intervall
+                if (stopwatch60.ElapsedMilliseconds > (1000 / TimerFps))
+                {
+                    if (!paused)
+                        updateTimers();
+                    playSound();
+                    stopwatch60.Reset();
+                    stopwatch60.Start();
+                }
             }
-            if (!paused)
-                updateTimers();
-            playSound();
-
-            //keyboard.CheckKeys();
-            renderer.Render(v, memory);
         }
 
         void updateTimers()
@@ -327,9 +325,7 @@ namespace CHIP_8
         void playSound()
         {
             if (soundTimer > 0)
-                speaker.Play(440);
-            else
-                speaker.Stop();
+                Task.Run(() => Console.Beep());
         }
     }
 }
