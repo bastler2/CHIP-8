@@ -16,8 +16,6 @@ namespace CHIP_8
         private static int cursortop = Console.CursorTop;
         bool[,] lastDisplay = new bool[cols * 2, rows];
 
-        Stopwatch stopWatch;
-
         public Renderer()
         {
             Console.CursorVisible = false;
@@ -44,6 +42,10 @@ namespace CHIP_8
                 y += rows;
 
             int pixelLoc = x + (y * cols);
+
+            if (pixelLoc >= 2048) //only debugging ?? dont know hwy sometimes it runs outside of screen
+                return false;
+
             display[pixelLoc] ^= true;
             return !display[pixelLoc];
         }

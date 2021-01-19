@@ -18,17 +18,21 @@ namespace CHIP_8
         private List<int> stack;
         private bool paused;
         public int speed = 1;
+        public int ExecutionTickDelay = 9000;
         private byte[] v;
         private int i;
         public double RenderFps = 16.66;
         public double TimerFps = 16.66;
         Stopwatch stopwatch60 = new Stopwatch();
         Stopwatch stopwatchRender = new Stopwatch();
+        Stopwatch ExecutionTickStopwatch = new Stopwatch();
 
         public CPU(Renderer renderer, Keyboard keyboard)
         {
             this.renderer = renderer;
             this.keyboard = keyboard;
+
+            ExecutionTickStopwatch.Start();
 
             //60fps
             stopwatch60.Start();
@@ -57,8 +61,14 @@ namespace CHIP_8
             // Some instructions require pausing, like Fx0A.
             paused = false;
 
+
+            stopwatchIsKeyDown.Start();
+            stopwatchReadKey.Start();
         }
 
+        //debugging
+        private Stopwatch stopwatchIsKeyDown = new Stopwatch();
+        private Stopwatch stopwatchReadKey = new Stopwatch();
 
         public void executeInstruction(int opcode)
         {
@@ -147,8 +157,8 @@ namespace CHIP_8
                             v[0xF] = Convert.ToByte(v[x] & 0x01);
                             v[x] >>= 1;
                             //ONLY TESTING ?!?!?!
-                            v[0xF] = Convert.ToByte(v[y] & 0x01);
-                            v[y] >>= 1;
+                            //v[0xF] = Convert.ToByte(v[y] & 0x01);
+                            //v[y] >>= 1;
                             break;
                         case 0x7: //8xy7 - SUBN Vx, Vy - Set Vx = Vy - Vx, set VF = NOT borrow. If Vy > Vx, then VF is set to 1, otherwise 0.Then Vx is subtracted from Vy, and the results stored in Vx.
                             v[0xF] = 0;
@@ -199,12 +209,18 @@ namespace CHIP_8
                     switch (opcode & 0xFF)
                     {
                         case 0x9E: //Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed. Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2.
-                            if (keyboard.IsKeyDown(v[x]))
+                            if (keyboard.IsKeyDown(v[x]))// && stopwatchIsKeyDown.ElapsedMilliseconds > 40)
+                            {
+                                stopwatchIsKeyDown.Restart();
                                 programmCounter += 2;
+                            }
                             break;
                         case 0xA1: //ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed. Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2.
-                            if (!keyboard.IsKeyDown(v[x]))
+                            if (!keyboard.IsKeyDown(v[x]))// && stopwatchIsKeyDown.ElapsedMilliseconds > 40)
+                            {
+                                stopwatchIsKeyDown.Restart();
                                 programmCounter += 2;
+                            }
                             break;
                     }
                     break;
@@ -215,12 +231,8 @@ namespace CHIP_8
                             v[x] = delayTimer;
                             break;
                         case 0x0A: //Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx. All execution stops until a key is pressed, then the value of that key is stored in Vx.
-                            paused = true;
-                            //ToDo
-                            //keyboard.OnNextKeyPress = function(key) {
-                            //    v[x] = key;
-                            //    paused = false;
-                            //}.bind(this);
+                            v[x] = keyboard.ReadKey();
+                            
                             break;
                         case 0x15: //Fx15 - LD DT, Vx - Set delay timer = Vx. DT is set equal to the value of Vx.
                             delayTimer = v[x];
@@ -289,19 +301,24 @@ namespace CHIP_8
         {
             // Reading rom from File as Bytes
             var rom = File.ReadAllBytes(romPath);
+            //string x = string.Empty;
+            //foreach (var item in rom)
+            //{
+            //    x += ", " + item;
+            //}
             // Loading programm into memory starting at 0x200
             for (int loc = 0; loc < rom.Length; loc++)
                 memory[0x200 + loc] = rom[loc];
         }
-        
         public void cycle()
         {
             while (true)
             {
-                //speed
-                for (int i = 0; i < speed; i++)
-                    if (!paused)
-                        executeInstruction(memory[programmCounter] << 8 | memory[programmCounter + 1]);
+                if(ExecutionTickStopwatch.ElapsedTicks >= ExecutionTickDelay)
+                {
+                    executeInstruction(memory[programmCounter] << 8 | memory[programmCounter + 1]);
+                    ExecutionTickStopwatch.Restart();
+                }
 
                 //only render and update timer in 60fps intervall
                 if (stopwatch60.ElapsedMilliseconds > (1000 / TimerFps))
@@ -309,8 +326,7 @@ namespace CHIP_8
                     if (!paused)
                         updateTimers();
                     playSound();
-                    stopwatch60.Reset();
-                    stopwatch60.Start();
+                    stopwatch60.Restart();
                 }
             }
         }

@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CHIP_8
 {
     public class Keyboard
     {
         private Game game;
+
+
+
         public Keyboard(Game game)
         {
             this.game = game;
@@ -36,6 +41,13 @@ namespace CHIP_8
         /// <returns>The state of the key.</returns>
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern short GetKeyState(int key);
+
+        public byte ReadKey()
+        {
+            //var x = keyMap.Select(m => m).Where(k => k.Value.Equals()).;
+            var key = Console.ReadKey().Key;
+            return (byte)keyMap.Where(p => p.Value == key).Select(p => p.Key).FirstOrDefault();
+        }
 
 
         public Dictionary<ushort, ConsoleKey> keyMap = new Dictionary<ushort, ConsoleKey>();
