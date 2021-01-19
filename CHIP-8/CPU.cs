@@ -289,11 +289,6 @@ namespace CHIP_8
         {
             // Reading rom from File as Bytes
             var rom = File.ReadAllBytes(romPath);
-            //string x = string.Empty;
-            //foreach (var item in rom)
-            //{
-            //    x += ", " + item;
-            //}
             // Loading programm into memory starting at 0x200
             for (int loc = 0; loc < rom.Length; loc++)
                 memory[0x200 + loc] = rom[loc];
